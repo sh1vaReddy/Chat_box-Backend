@@ -1,7 +1,6 @@
 import express from "express";
 import UseRouter from "./routes/Users.js";
 import dotenv from "dotenv";
-import corsoption from "./config/cros.js";
 import connectdb from "./config/db.js";
 import { errormidddleware } from "./middleware/error.js";
 import cookieParser from "cookie-parser";
@@ -23,8 +22,8 @@ import {
 } from "./constants/events.js";
 import { getSocket } from "./lib/helper.js";
 import { Message } from "./Models/Message.js";
-const Port = process.env.PORT || 5000;
 
+const Port = process.env.PORT || 5000;
 
 dotenv.config();
 
@@ -34,7 +33,13 @@ cloudinary.config({
   api_secret: process.env.API_KEY_SCERET,
 });
 
+const corsoption = {
+  origin: [process.env.CLIENT_URL],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
 const server = express();
+server.use(cors(corsoption));
 const app = createServer(server);
 const io = new Server(app, {
   cors: corsoption,
@@ -43,21 +48,16 @@ const io = new Server(app, {
 server.set("io", io);
 server.use(express.json());
 server.use(cookieParser());
-server.use(cors(corsoption));
 
 connectdb();
 
 const userSocketIDs = new Map();
-const onlineusers=new Set();
+const onlineusers = new Set();
 
 server.use("/api/v1", UseRouter, ChatRouter);
 
 io.use((socket, next) => {
-  cookieParser()(
-    socket.request,
-    socket.request.res,
-    async (err) => await socketAuthenticator(err, socket, next)
-  );
+  cookieParser()(socket.request, socket.request.res, async (err) => await socketAuthenticator(err, socket, next));
 });
 
 io.on("connection", (socket) => {
@@ -97,32 +97,32 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on(CHAT_JOINED,({userId,members})=>{
-        onlineusers.add(userId.toString())
-        const memberSocket=getSocket(members)
-        io.to(memberSocket).emit(ONLINE_USERS,Array.from(onlineusers))
-  })
+  socket.on(CHAT_JOINED, ({ userId, members }) => {
+    onlineusers.add(userId.toString());
+    const memberSocket = getSocket(members);
+    io.to(memberSocket).emit(ONLINE_USERS, Array.from(onlineusers));
+  });
 
-  socket.on(CHAT_EXIT,({userId,members })=>{
-    onlineusers.delete(userId.toString())
-    const memberSocket=getSocket(members)
-    io.to(memberSocket).emit(ONLINE_USERS,Array.from(onlineusers))
+  socket.on(CHAT_EXIT, ({ userId, members }) => {
+    onlineusers.delete(userId.toString());
+    const memberSocket = getSocket(members);
+    io.to(memberSocket).emit(ONLINE_USERS, Array.from(onlineusers));
+  });
 
-  })  
   socket.on(START_TYPING, ({ members, chatId }) => {
     const memberSocket = getSocket(members);
-    socket.to(memberSocket).emit(START_TYPING,{ chatId });
-
+    socket.to(memberSocket).emit(START_TYPING, { chatId });
   });
+
   socket.on(STOP_TYPING, ({ members, chatId }) => {
     const memberSocket = getSocket(members);
-    socket.to(memberSocket).emit(STOP_TYPING,{ chatId });
-
+    socket.to(memberSocket).emit(STOP_TYPING, { chatId });
   });
+
   socket.on("disconnect", () => {
     userSocketIDs.delete(user._id.toString());
-    onlineusers.delete(user._id.toString())
-    socket.broadcast.emit(ONLINE_USERS,Array.from(onlineusers))
+    onlineusers.delete(user._id.toString());
+    socket.broadcast.emit(ONLINE_USERS, Array.from(onlineusers));
   });
 });
 
@@ -133,3 +133,4 @@ app.listen(Port, () => {
 });
 
 export { userSocketIDs };
+export default corsoption;
