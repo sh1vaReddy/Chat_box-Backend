@@ -1,8 +1,7 @@
-const corsoption={
-    origin:[process.env.CLIENT_URL],
+const corsoption = {
+    origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL] : [],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials:true,
-}
+    credentials: true,
+};
 
-
-export default corsoption
+export default corsoption;
