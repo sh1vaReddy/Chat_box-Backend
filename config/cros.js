@@ -1,5 +1,5 @@
 const corsoption={
-    origin:[process.env.CLIENT_UR],
+    origin:[process.env.CLIENT_URL],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials:true,
 }
